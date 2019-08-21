@@ -79,24 +79,24 @@ avaScript 中有两个机制可以“欺骗”词法作用域:eval(..) 和 with�
 ```
 foo();
 function foo() {
-console.log( a ); // undefined var a = 2;
+console.log( a ); // undefined 
+var a = 2;
 }
 ```
 
 #### 函数声明可以被提升，但是函数表达式不能被提升。
 
 ```
-foo();
-function foo() {
-console.log( a ); // undefined var a = 2;
+foo();//TypeError
+var foo =  function(){
 }
 ```
 
 #### 即使是具名的函数表达式，名称标识符在赋值之前也无法在所在作用域中使用
 
 ```
- foo(); // TypeError
-      bar(); // ReferenceError
+foo(); // TypeError
+bar(); // ReferenceError
 var foo = function bar() { // ...
 };
 ```

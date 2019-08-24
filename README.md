@@ -338,3 +338,91 @@ o.foo(); // 3
 #### 对象里的内容
 
 需要强调的一点是，当我们说“内容”时，似乎在暗示这些值实际上被存储在对象内部， 但是这只是它的表现形式。在引擎内部，这些值的存储方式是多种多样的，一般并不会存 在对象容器内部。存储在对象容器内部的是这些属性的名称，它们就像指针(从技术角度 来说就是引用)一样，指向这些值真正的存储位置。
+
+#### 对象的深浅拷贝
+
+可查资料
+
+#### 属性描述符
+
+```
+var myObject = {
+     a:2
+};
+//获取
+ Object.getOwnPropertyDescriptor( myObject, "a" );
+// {
+// value: 2,
+// writable: true,
+// enumerable: true,
+// configurable: true
+// }
+//定义
+var myObject = {};
+Object.defineProperty( myObject, "a",
+{
+         value: 2,
+         writable: true,
+         configurable: true,
+          enumerable: true
+} );
+
+```
+
+1. Writable
+   writable 决定是否可以修改属性的值。
+2. Configurable
+   只要属性是可配置的，就可以使用 defineProperty(..) 方法来修改属性描述符:
+   要注意有一个小小的例外:即便属性是 configurable:false，我们还是可以 把 writable 的状态由 true 改为 false，但是无法由 false 改为 true。
+3. Enumerable
+   这里我们要介绍的最后一个属性描述符(还有两个，我们会在介绍 getter 和 setter 时提到) 是 enumerable。
+   从名字就可以看出，这个描述符控制的是属性是否会出现在对象的属性枚举中，比如说 for..in 循环。如果把 enumerable 设置成 false，这个属性就不会出现在枚举中，虽然仍 然可以正常访问它。相对地，设置成 true 就会让它出现在枚举中。
+   用户定义的所有的普通属性默认都是 enumerable，这通常就是你想要的。但是如果你不希 望某些特殊属性出现在枚举中，那就把它设置成 enumerable:false。
+
+#### 如何实现对象不变性
+
+1. 对象常量
+结合 writable:false 和 configurable:false 就可以创建一个真正的常量属性(不可修改、 重定义或者删除):
+
+```
+var myObject = {};
+Object.defineProperty(myObject, "FAVORITE_NUMBER", {
+    value: 42,
+    writable: false,
+    configurable: false
+});
+```
+
+2. 禁止扩展
+如果你想禁止一个对象添加新属性并且保留已有属性，可以使用 Object.prevent Extensions(..):
+```
+var myObject = {
+        a: 2
+    };
+Object.preventExtensions(myObject);
+myObject.b = 3;
+myObject.b; // undefined
+```
+
+3. 密封
+Object.seal(..) 会创建一个“密封”的对象，这个方法实际上会在一个现有对象上调用 Object.preventExtensions(..) 并把所有现有属性标记为 configurable:false。
+所以，密封之后不仅不能添加新属性，也不能重新配置或者删除任何现有属性(虽然可以 修改属性的值)。
+
+4. 冻结
+Object.freeze(..) 会创建一个冻结对象，这个方法实际上会在一个现有对象上调用 Object.seal(..) 并把所有“数据访问”属性标记为 writable:false，这样就无法修改它们 的值。
+这个方法是你可以应用在对象上的级别最高的不可变性，它会禁止对于对象本身及其任意 直接属性的修改(不过就像我们之前说过的，这个对象引用的其他对象是不受影响的)。
+你可以“深度冻结”一个对象，具体方法为，首先在这个对象上调用 Object.freeze(..)， 然后遍历它引用的所有对象并在这些对象上调用 Object.freeze(..)。但是一定要小心，因 为这样做有可能会在无意中冻结其他(共享)对象。
+
+
+#### 如何判断对象是否存在于对象中
+
+```
+var myObject = {
+    a: 2
+};
+("a" in myObject); // true
+("b" in myObject); // false
+myObject.hasOwnProperty("a"); // true
+myObject.hasOwnProperty("b"); // false
+```
+in 操作符会检查属性是否在对象及其 [[Prototype]] 原型链中(参见第 5 章)。相比之下， hasOwnProperty(..) 只会检查属性是否在 myObject 对象中
